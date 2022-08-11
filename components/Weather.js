@@ -13,7 +13,7 @@ export default function Weather() {
       }}
     >
       <div
-        className="weather-data"
+        className="weather-data glass-light"
         style={{
           display: "flex",
           flexDirection: "row",
@@ -22,25 +22,31 @@ export default function Weather() {
           marginBottom: "2rem",
           marginLeft: "3rem",
           gap: "2rem",
-          backgroundColor: "rgba(255, 255, 255, 0.72)",
-          boxShadow: "0 4px 30px rgba(0, 0, 0, 0.1)",
-          backdropFilter: "blur(5.7px)",
-          webkitBackdropFilter: "blur(5.7px)",
-          width: "50vh",
-          height: "19vh",
-          borderRadius: "2.5rem",
-          color: "#000",
+          width: "30rem",
+          height: "10rem",
+          borderRadius: "1rem",
         }}
       >
-        <h1
-          className="temp"
+        <div
+          className="city-details"
           style={{
-            fontSize: "6rem",
-            fontWeight: 400,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          16&#176;
-        </h1>
+          <h1
+            className="temp"
+            style={{
+              fontSize: "6rem",
+              fontWeight: 400,
+            }}
+          >
+            16&#176;
+          </h1>
+        </div>
+
         <div
           className="city-details"
           style={{
@@ -77,12 +83,12 @@ export default function Weather() {
             justifyContent: "center",
           }}
         >
-          <img
+          <Image
             className="condition-icon"
-            src="http://openweathermap.org/img/wn/50d@4x.png"
-            style={{
-              width: "3.5rem",
-            }}
+            src="http://openweathermap.org/img/wn/11d@4x.png"
+            width="55px"
+            height="55px"
+            alt="Weather Condition"
           />
           <span
             className="condition-text"
@@ -90,7 +96,7 @@ export default function Weather() {
               fontSize: "1.25rem",
             }}
           >
-            Cloudy
+            Mist
           </span>
         </div>
       </div>
