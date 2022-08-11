@@ -13,10 +13,18 @@ a {
   text-decoration: none;
 }
 
-.glass {
-  background-color: rgba(255, 255, 255, 0.85);
+.glass-light {
+  background-color: rgba(250, 255, 255, 0.7);
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(5.7px);
   -webkit-backdrop-filter: blur(5.7px);
   color: #000;
+}
+
+.glass-dark {
+  background-color: rgba(0, 0, 0, 0.7);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5.7px);
+  -webkit-backdrop-filter: blur(5.7px);
+  color: #fff;
 }
