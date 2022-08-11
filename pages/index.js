@@ -7,6 +7,7 @@ import Drawer from "../components/Drawer";
  * Add a search bar to the drawer.
  * Create script to fetch current time in a country/city
  * Create script to fetch weather data of a country/city
+ * Change theme based on time of a country
  * */
 
 // Image Imports
