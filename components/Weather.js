@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-export default function Weather() {
+export default function Weather({ weather, time }) {
   return (
     <div
       className="weather-app"
@@ -22,9 +22,10 @@ export default function Weather() {
           marginBottom: "2rem",
           marginLeft: "3rem",
           gap: "2rem",
-          width: "30rem",
+          width: "fit-content",
           height: "10rem",
           borderRadius: "1rem",
+          padding: "1rem 2rem",
         }}
       >
         <div
@@ -43,7 +44,7 @@ export default function Weather() {
               fontWeight: 400,
             }}
           >
-            16&#176;
+            {Math.round(weather.main.temp)}&#176;
           </h1>
         </div>
 
@@ -63,7 +64,7 @@ export default function Weather() {
               fontWeight: "400",
             }}
           >
-            London
+            {weather.name}
           </span>
           <span
             className="datetime"
@@ -71,7 +72,8 @@ export default function Weather() {
               fontSize: "1.2rem",
             }}
           >
-            06:09 - {new Date().toLocaleDateString()}
+            {time.datetime.substring(10, 16)} -{" "}
+            {new Date().toLocaleDateString()}
           </span>
         </div>
         <div
@@ -85,7 +87,7 @@ export default function Weather() {
         >
           <Image
             className="condition-icon"
-            src="http://openweathermap.org/img/wn/11d@4x.png"
+            src={`http://openweathermap.org/img/wn/${weather.weather[0].icon}@4x.png`}
             width="55px"
             height="55px"
             alt="Weather Condition"
@@ -96,7 +98,7 @@ export default function Weather() {
               fontSize: "1.25rem",
             }}
           >
-            Mist
+            {weather.weather[0].main}
           </span>
         </div>
       </div>
