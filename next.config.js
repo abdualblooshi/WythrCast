@@ -5,6 +5,18 @@ const nextConfig = {
 };
 
 module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: "/",
+        destination: "https://timezone.abstractapi.com/:path*",
+      },
+      {
+        source: "/",
+        destination: "https://api.openweathermap.org/:path*",
+      },
+    ];
+  },
   images: {
     domains: [
       "i.imgur.com",
@@ -16,5 +28,9 @@ module.exports = {
       "user-images.githubusercontent.com",
       "openweathermap.org",
     ],
+  },
+  env: {
+    WEATHER_API_KEY: process.env.WEATHER_API_KEY,
+    TIMEZONE_API_KEY: process.env.TIMEZONE_API_KEY,
   },
 };
