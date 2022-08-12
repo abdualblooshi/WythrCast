@@ -1,7 +1,7 @@
 import { Input, InputLeftElement, InputGroup, Button } from "@chakra-ui/react";
 import { MdBuild, MdSearch } from "react-icons/md";
 
-export default function Drawer() {
+export default function Drawer({ city, error }) {
   return (
     <>
       {" "}
