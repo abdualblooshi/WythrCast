@@ -1,10 +1,26 @@
-import { Input, InputLeftElement, InputGroup, Button } from "@chakra-ui/react";
-import { MdBuild, MdSearch } from "react-icons/md";
+import {
+  Input,
+  InputLeftElement,
+  InputRightElement,
+  InputGroup,
+  IconButton,
+  Alert,
+  AlertIcon,
+} from "@chakra-ui/react";
+import { SearchIcon, CloseIcon } from "@chakra-ui/icons";
+import { useState } from "react";
+import ReactLoading from "react-loading";
 
-export default function Drawer({ city, error }) {
+export default function Drawer({
+  city,
+  error,
+  setCity,
+  errorMessage,
+  isLoading,
+}) {
+  const [currentValue, setCurrentValue] = useState("");
   return (
     <>
-      {" "}
       <div
         className="drawer-container glass-light"
         style={{
@@ -25,9 +41,61 @@ export default function Drawer({ city, error }) {
             flexDirection: "column",
             justifyContent: "flex-start",
             padding: "2rem 4rem",
+            gap: "1rem",
           }}
         >
-          <h2>Drawer (WIP)</h2>
+          {error ? (
+            <Alert status="error" borderRadius="0.75rem">
+              {errorMessage}
+            </Alert>
+          ) : null}
+
+          <InputGroup
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            _focusVisible={{
+              outline: "none",
+            }}
+            _error={{
+              borderColor: "#ff0000",
+            }}
+            borderColor="#000"
+          >
+            <InputLeftElement color="gray.300">
+              <IconButton
+                icon={<SearchIcon color={error ? "#F00" : "#000"} />}
+                variant="ghost"
+                onClick={(e) => {
+                  setCity(currentValue);
+                }}
+              />
+            </InputLeftElement>
+            <Input
+              placeholder="Search for a city/country"
+              color={error ? "#F00" : "#000"}
+              variant="flushed"
+              fontSize="1.5rem"
+              _placeholder={error ? { color: "#F00" } : { color: "#555" }}
+              _outline={{ color: "#000" }}
+              _focusVisible={{
+                outline: "none",
+              }}
+              onChange={(e) => setCurrentValue(e.currentTarget.value)}
+              _underline={{ color: "#000" }}
+              width="fit-content"
+              value={currentValue}
+              isInvalid={error}
+              onKeyPress={(e) => {
+                if (e.key === "Enter") {
+                  setCity(currentValue);
+                }
+              }}
+            />
+            <InputRightElement display={currentValue === "" || currentValue === null ? "none" : "flex"} alignItems="center" justifyContent="center">
+              <CloseIcon color="#000"/>
+            </InputRightElement>
+          </InputGroup>
         </div>
       </div>
     </>
