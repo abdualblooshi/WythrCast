@@ -15,6 +15,14 @@ module.exports = {
         source: "/",
         destination: "https://api.openweathermap.org/:path*",
       },
+      {
+        source: "/",
+        destination: "https://ip-api.com/:path*",
+      },
+      {
+        source: "/",
+        destination: "http://worldtimeapi.org/:path*",
+      },
     ];
   },
   images: {
