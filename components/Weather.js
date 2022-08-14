@@ -1,6 +1,23 @@
 import Image from "next/image";
+import { Skeleton, SkeletonText } from "@chakra-ui/react";
 
 export default function Weather({ weather, time }) {
+  const convertUnixToHHMM = (unixTimestamp) => {
+    const date = new Date(unixTimestamp * 1000);
+
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+
+    // 👇️ Format as hh:mm:ss
+    const time = `${padTo2Digits(hours)}:${padTo2Digits(minutes)}`;
+
+    return time; // 👉️ 09:25
+  };
+
+  const padTo2Digits = (num) => {
+    return num.toString().padStart(2, "0");
+  };
+
   return (
     <div
       className="weather-app"
@@ -23,9 +40,12 @@ export default function Weather({ weather, time }) {
           marginLeft: "3rem",
           gap: "2rem",
           width: "fit-content",
-          height: "10rem",
-          borderRadius: "1rem",
+          maxWidth: "80rem",
+          minHeight: "10rem",
+          borderRadius: "1.5rem",
           padding: "1rem 2rem",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
         }}
       >
         <div
@@ -40,11 +60,16 @@ export default function Weather({ weather, time }) {
           <h1
             className="temp"
             style={{
-              fontSize: "6rem",
+              fontSize: "5rem",
               fontWeight: 400,
+              maxWidth: "27.5rem",
             }}
           >
-            {Math.round(weather.main.temp)}&#176;
+            {weather == undefined || weather == null ? (
+              <SkeletonText width="25.5rem" />
+            ) : (
+              `${Math.round(weather.main.temp)}°C`
+            )}
           </h1>
         </div>
 
@@ -64,7 +89,11 @@ export default function Weather({ weather, time }) {
               fontWeight: "400",
             }}
           >
-            {weather.name}
+            {weather == undefined || weather == null ? (
+              <SkeletonText />
+            ) : (
+              weather.name
+            )}
           </span>
           <span
             className="datetime"
@@ -72,8 +101,11 @@ export default function Weather({ weather, time }) {
               fontSize: "1.2rem",
             }}
           >
-            {time.datetime.substring(10, 16)} -{" "}
-            {new Date().toLocaleDateString()}
+            {weather == undefined || weather == null ? (
+              <SkeletonText />
+            ) : (
+              `${convertUnixToHHMM(time)} - ${new Date().toLocaleDateString()}`
+            )}
           </span>
         </div>
         <div
@@ -85,20 +117,28 @@ export default function Weather({ weather, time }) {
             justifyContent: "center",
           }}
         >
-          <Image
-            className="condition-icon"
-            src={`http://openweathermap.org/img/wn/${weather.weather[0].icon}@4x.png`}
-            width="55px"
-            height="55px"
-            alt="Weather Condition"
-          />
+          {weather == undefined || weather == null ? (
+            <SkeletonText />
+          ) : (
+            <Image
+              className="condition-icon"
+              src={`http://openweathermap.org/img/wn/${weather.weather[0].icon}@4x.png`}
+              width="55px"
+              height="55px"
+              alt="Weather Condition"
+            />
+          )}
           <span
             className="condition-text"
             style={{
               fontSize: "1.25rem",
             }}
           >
-            {weather.weather[0].main}
+            {weather == undefined || weather == null ? (
+              <SkeletonText />
+            ) : (
+              weather.weather[0].main
+            )}
           </span>
         </div>
       </div>
