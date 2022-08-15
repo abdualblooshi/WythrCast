@@ -92,8 +92,17 @@ export default function Drawer({
                 }
               }}
             />
-            <InputRightElement display={currentValue === "" || currentValue === null ? "none" : "flex"} alignItems="center" justifyContent="center">
-              <CloseIcon color="#000"/>
+            <InputRightElement
+              onClick={(e) => {
+                setCurrentValue("");
+              }}
+              display={
+                currentValue === "" || currentValue === null ? "none" : "flex"
+              }
+              alignItems="center"
+              justifyContent="center"
+            >
+              <CloseIcon color="#000" />
             </InputRightElement>
           </InputGroup>
         </div>
