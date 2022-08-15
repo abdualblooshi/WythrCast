@@ -24,14 +24,13 @@ export default function Drawer({
       <div
         className="drawer-container glass-light"
         style={{
-          height: "100vh",
+          height: "90vh",
           display: "flex",
           flexDirection: "column",
           justifyContent: "flex-start",
-          width: "25vw",
+          width: "23vw",
           color: "#000",
-          borderTopLeftRadius: "1rem",
-          borderBottomLeftRadius: "1rem",
+          borderRadius: "1rem",
         }}
       >
         <div
