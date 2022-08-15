@@ -23,6 +23,10 @@ module.exports = {
         source: "/",
         destination: "http://worldtimeapi.org/:path*",
       },
+      {
+        source: "/",
+        destination: "https://api.ipgeolocation.io/:path*",
+      },
     ];
   },
   images: {
