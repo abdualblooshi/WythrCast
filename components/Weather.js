@@ -1,23 +1,7 @@
 import Image from "next/image";
 import { Skeleton, SkeletonText } from "@chakra-ui/react";
 
-export default function Weather({ weather, time }) {
-  const convertUnixToHHMM = (unixTimestamp) => {
-    const date = new Date(unixTimestamp * 1000);
-
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-
-    // 👇️ Format as hh:mm:ss
-    const time = `${padTo2Digits(hours)}:${padTo2Digits(minutes)}`;
-
-    return time; // 👉️ 09:25
-  };
-
-  const padTo2Digits = (num) => {
-    return num.toString().padStart(2, "0");
-  };
-
+export default function Weather({ weather, time, date }) {
   return (
     <div
       className="weather-app"
@@ -104,7 +88,7 @@ export default function Weather({ weather, time }) {
             {weather == undefined || weather == null ? (
               <SkeletonText />
             ) : (
-              `${convertUnixToHHMM(time)} - ${new Date().toLocaleDateString()}`
+              `${time} - ${date}`
             )}
           </span>
         </div>
