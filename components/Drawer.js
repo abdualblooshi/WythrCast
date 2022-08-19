@@ -9,7 +9,6 @@ import {
 } from "@chakra-ui/react";
 import { SearchIcon, CloseIcon } from "@chakra-ui/icons";
 import { useState } from "react";
-import ReactLoading from "react-loading";
 
 export default function Drawer({
   city,
@@ -17,6 +16,8 @@ export default function Drawer({
   setCity,
   errorMessage,
   isLoading,
+  amPm,
+  time12Format
 }) {
   const [currentValue, setCurrentValue] = useState("");
   return (
@@ -39,8 +40,8 @@ export default function Drawer({
             display: "flex",
             flexDirection: "column",
             justifyContent: "flex-start",
-            padding: "2rem 4rem",
-            gap: "1rem",
+            padding: "1rem 2rem",
+            gap: "2rem",
           }}
         >
           {error ? (
