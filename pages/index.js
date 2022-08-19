@@ -8,6 +8,7 @@ import { setupCache } from "axios-cache-adapter";
 import rateLimit from "axios-rate-limit";
 import { useEffect, useCallback } from "react";
 import LoadingModal from "../components/LoadingModal";
+import { NextSeo } from "next-seo";
 
 /**
  * TODO:
@@ -16,6 +17,8 @@ import LoadingModal from "../components/LoadingModal";
  * Create script to fetch weather data of a country/city [DONE]
  * Change theme based on time of a country [WIP]
  * Implement Caching Mechanism for API calls [WIP]
+ * Add a settings button
+ * Finalize Drawer component
  * */
 
 // Image Imports
@@ -50,18 +53,16 @@ const fetcher = (...args) => fetch(...args).then((res) => res.json());
 
 export default function Home(props) {
   const [city, setCity] = useState(props.defaultCity);
-  const [searchValue, setSearchValue] = useState("");
   const [units, setUnits] = useState("metric");
   const [weather, setWeather] = useState(null);
   const [time, setTime] = useState("");
-  const [timeYMD, setTimeYMD] = useState("");
   const [error, setError] = useState(false);
   const [isLoading, setLoading] = useState(true);
-  const [sunrise, setSunrise] = useState(0);
-  const [sunset, setSunset] = useState(0);
   const [backgroundImage, setBackground] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [date, setDate] = useState(new Date().toLocaleDateString());
+  const [amPm, setAmPm] = useState("");
+  const [time12Format, setTime12Format] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,9 +75,9 @@ export default function Home(props) {
       http.setMaxRPS(1);
 
       const changeBackground = (sunrise, sunset, data, targetTime) => {
-        console.log("Current Time in City: ", targetTime);
-        const currentHours = targetTime.getHours();
-        const currentMinutes = targetTime.getMinutes();
+        const currentHours = targetTime.substring(0, 2);
+        const currentMinutes = targetTime.substring(3, 5);
+        console.log(`${currentHours} : ${currentMinutes}`);
         const sunriseTime = new Date(sunrise * 1000);
         console.log("Sunrise Time in City: ", sunriseTime);
         const sunriseHours = sunriseTime.getHours();
@@ -109,7 +110,7 @@ export default function Home(props) {
           if (data.weather[0].main === "Clear") {
             setBackground(clearDay.src);
           } else if (data.weather[0].main === "Clouds") {
-            setBackground(cloudyDay.src);
+            setBackground(cloudyNight.src);
           } else if (
             (data.weather[0].main === "Rain" &&
               data.weather[0].description === "light rain") ||
@@ -204,16 +205,17 @@ export default function Home(props) {
             const timeResponse = responses[1];
             const weatherResponse = responses[0];
             setTime(timeResponse.data.time_24.substring(0, 5));
-            setTimeYMD(timeResponse.data.date_time_ymd);
             setDate(timeResponse.data.date);
+            setTime12Format(timeResponse.data.time_12.substring(0, 5));
+            console.log(time12Format);
+            setAmPm(timeResponse.data.time_12.substring(9));
+            console.log(amPm);
             setWeather(weatherResponse.data);
-            setSunrise(weatherResponse.data.sys.sunrise);
-            setSunset(weatherResponse.data.sys.sunset);
             changeBackground(
               weatherResponse.data.sys.sunrise,
               weatherResponse.data.sys.sunset,
               weatherResponse.data,
-              new Date(timeResponse.data.date_time_ymd) // <--- to be fixed
+              time // <--- to be fixed
               /*
                * TODO:
                * new Date() won't work because it keeps referencing back to the same time value,
@@ -245,7 +247,12 @@ export default function Home(props) {
   return (
     <>
       <Head>
-        <title>WythrCast</title>
+        <title>
+          WythrCast
+          {weather == null || weather == undefined
+            ? null
+            : ` - ${Math.round(weather.main.temp)}°C`}
+        </title>
         <meta
           name="description"
           content="A weather application created by Abdulrahman Alblooshi"
@@ -305,9 +312,10 @@ export default function Home(props) {
             weather={weather}
             error={error}
             setCity={setCity}
-            setSearchValue={setSearchValue}
             errorMessage={errorMessage}
             isLoading={isLoading}
+            amPm={amPm}
+            time12Format={time12Format}
           />
         </div>
       </div>
