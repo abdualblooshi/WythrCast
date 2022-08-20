@@ -8,7 +8,7 @@ body {
 }
 
 .glass-light {
-  background-color: rgba(250, 255, 255, 0.7);
+  background-color: rgba(250, 255, 255, 0.5);
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(5.7px);
   -webkit-backdrop-filter: blur(5.7px);
@@ -16,7 +16,7 @@ body {
 }
 
 .glass-dark {
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.5);
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(5.7px);
   -webkit-backdrop-filter: blur(5.7px);
