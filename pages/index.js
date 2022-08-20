@@ -5,6 +5,8 @@ import axios from "axios";
 import rateLimit from "axios-rate-limit";
 import { useEffect, useCallback } from "react";
 import LoadingModal from "../components/LoadingModal";
+import { Heading } from "@chakra-ui/react";
+import useMediaQuery from "../hooks/useMediaQuery";
 
 /**
  * TODO:
@@ -27,6 +29,7 @@ import clearNight from "../public/images/clear_night.jpg";
 import cloudyNight from "../public/images/cloudy_night.jpg";
 import drizzleNight from "../public/images/drizzle_night.jpg";
 import dustNight from "../public/images/dust_night.jpg";
+import snowyNight from "../public/images/snow_night.jpg";
 
 // Day Images
 import clearDay from "../public/images/clear_day.jpg";
@@ -63,6 +66,8 @@ export default function Home(props) {
   const [time12Format, setTime12Format] = useState("");
   const [titleColor, setTitleColor] = useState("#FFF");
   const [theme, setTheme] = useState("light");
+  const [isMobile, setIsMobile] = useState(false);
+  const isLargerThan900 = useMediaQuery(800);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -110,19 +115,21 @@ export default function Home(props) {
 
         if (
           current_time.hours >= sunrise_time.hours &&
-          current_time.hours <= sunset_time.hours
+          current_time.minutes >= sunrise_time.minutes &&
+          current_time.hours <= sunset_time.hours &&
+          current_time.minutes <= sunset_time.minutes
         ) {
           // Day Pictures
           if (data.weather[0].main === "Clear") {
             setTitleColor("#000");
             if (data.main.temp >= 40) {
               setBackground(hotWeather.src);
-            } else if (data.main.temp <= 0) {
-              setBackground(snowyDay.src);
             } else {
               setBackground(clearDay.src);
             }
-          } else if (data.weather[0].main === "Clouds") {
+          } else if (data.main.temp <= 0) {
+            setBackground(snowyDay.src);
+          } else if (data.weather[0].main === "Clouds" && data.main.temp > 0) {
             setTitleColor("#FFF");
             setBackground(cloudyNight.src);
           } else if (
@@ -178,15 +185,15 @@ export default function Home(props) {
           ) {
             setTitleColor("#FFF");
             setBackground(mistWeather.src);
-          } else if (data.weather[0].main === "Clouds") {
+          } else if (data.weather[0].main === "Clouds" && data.main.temp > 0) {
             setTitleColor("#FFF");
             setBackground(cloudyNight.src);
           } else if (data.weather[0].main === "Dust") {
             setTitleColor("#FFF");
             setBackground(dustNight.src);
-          } else if (data.weather[0].main === "Snow") {
-            setTitleColor("#000");
-            setBackground(snowyDay.src);
+          } else if (data.weather[0].main === "Snow" || data.main.temp <= 0) {
+            setTitleColor("#FFF");
+            setBackground(snowyNight.src);
           } else if (data.weather[0].main === "Drizzle") {
             setTitleColor("#FFF");
             setBackground(drizzleNight.src);
@@ -205,7 +212,7 @@ export default function Home(props) {
 
       setLoading(true);
       try {
-        const timeRequest = await http.get(
+        const timeRequest = await axios.get(
           `https://api.ipgeolocation.io/timezone?apiKey=${process.env.TIMEZONE_API_KEY}&location=${city}`,
           {
             cache: {
@@ -284,7 +291,7 @@ export default function Home(props) {
         className="app-container"
         style={{
           position: "absolute",
-          display: "block",
+          display: "flex",
           backgroundImage: `url(${
             isLoading && backgroundImage === ""
               ? hotWeather.src
@@ -298,19 +305,18 @@ export default function Home(props) {
           fontFamily: "Lato, sans-serif",
         }}
       >
-        <span
+        <Heading
           className="app-title"
-          style={{
-            position: "absolute",
-            fontSize: "3rem",
-            marginLeft: "3rem",
-            marginTop: "5vh",
-            color: titleColor,
-            fontWeight: 100,
-          }}
+          color={titleColor}
+          textAlign={isLargerThan900 ? "left" : "center"}
+          padding={!isLargerThan900 ? "1.5rem 0rem" : "1.5rem 2.5rem"}
+          width="100%"
+          position="absolute"
+          fontSize={["1.5rem", "2rem", "2.5rem"]}
+          fontWeight={100}
         >
           WythrCast
-        </span>
+        </Heading>
         <div
           className="weather-app"
           style={{
@@ -333,6 +339,7 @@ export default function Home(props) {
             setCity={setCity}
             errorMessage={errorMessage}
             theme={theme}
+            isLargerThan900={isLargerThan900}
           />
         </div>
       </div>
