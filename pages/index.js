@@ -30,6 +30,7 @@ import cloudyNight from "../public/images/cloudy_night.jpg";
 import drizzleNight from "../public/images/drizzle_night.jpg";
 import dustNight from "../public/images/dust_night.jpg";
 import snowyNight from "../public/images/snow_night.jpg";
+import hotNight from "../public/images/hot_night.jpg";
 
 // Day Images
 import clearDay from "../public/images/clear_day.jpg";
@@ -83,20 +84,20 @@ export default function Home(props) {
         const currentDate = new Date(targetTime);
         const currentHours = currentDate.getUTCHours();
         const currentMinutes = currentDate.getUTCMinutes();
-        console.log(`${currentHours} : ${currentMinutes}`);
+        //console.log(`${currentHours} : ${currentMinutes}`);
         const sunriseTime = new Date(sunrise * 1000);
 
         const sunriseHours = sunriseTime.getUTCHours();
         const sunriseMinutes = sunriseTime.getUTCMinutes();
-        console.log(
+        /*console.log(
           `Sunrise Time in ${city}: (${sunriseHours}:${sunriseMinutes})`
-        );
+        );*/
         const sunsetTime = new Date(sunset * 1000);
         const sunsetHours = sunsetTime.getUTCHours();
         const sunsetMinutes = sunsetTime.getUTCMinutes();
-        console.log(
+        /*         console.log(
           `Sunset Time in ${city}: (${sunsetHours}:${sunsetMinutes})`
-        );
+        ); */
 
         const current_time = {
           hours: currentHours,
@@ -174,7 +175,11 @@ export default function Home(props) {
           // Night Pictures
           if (data.weather[0].main === "Clear") {
             setTitleColor("#FFF");
-            setBackground(clearNight.src);
+            if (data.main.temp >= 40) {
+              setBackground(hotNight.src);
+            } else {
+              setBackground(clearNight.src);
+            }
           } else if (data.weather[0].main === "Rain") {
             setTitleColor("#000");
             setBackground(rainWeather.src);
@@ -240,9 +245,9 @@ export default function Home(props) {
             setDate(timeResponse.data.date);
             setDateYMD(timeResponse.data.date_time_ymd);
             setTime12Format(timeResponse.data.time_12.substring(0, 5));
-            console.log(time12Format);
+            /*             console.log(time12Format); */
             setAmPm(timeResponse.data.time_12.substring(9));
-            console.log(amPm);
+            /*             console.log(amPm); */
             setWeather(weatherResponse.data);
             changeBackground(
               weatherResponse.data.sys.sunrise,
@@ -250,19 +255,22 @@ export default function Home(props) {
               weatherResponse.data,
               dateYMD
             );
-            console.log(city);
-            console.log("-------------");
+            /*             console.log(city);
+            console.log("-------------"); */
             setError(false);
             setLoading(false);
           })
         );
       } catch (error) {
-        console.log(error);
         if (error.request.status === 404) {
+          console.clear();
+          console.log("🌏 Please type the correct city name");
           setError(true);
           setErrorMessage("Wrong city/country!");
           setLoading(false);
         } else {
+          console.clear();
+          console.log("🌏 Error!");
           setErrorMessage("Error!");
           setError(true);
           setLoading(false);
