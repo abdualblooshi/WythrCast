@@ -356,8 +356,17 @@ export default function Home(props) {
 }
 
 export async function getServerSideProps(context) {
-  const ipRequest = await axios.get(`https://api.ipify.org?format=json`);
-  const ip = ipRequest.data.ip;
+  let ip;
+
+  const { req } = context;
+
+  if (req.headers["x-forwarded-for"]) {
+    ip = req.headers["x-forwarded-for"].split(",")[0];
+  } else if (req.headers["x-real-ip"]) {
+    ip = req.connection.remoteAddress;
+  } else {
+    ip = req.connection.remoteAddress;
+  }
 
   const cityRequest = await axios.get(
     `http://ip-api.com/json/${ip}?fields=status,message,country,city,lat,lon,query,timezone`
