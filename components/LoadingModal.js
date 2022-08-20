@@ -22,6 +22,7 @@ export default function LoadingModal({isLoading}) {
             left: "50%",
             transform: "translate(-50%, -50%)",
             margin: "0",
+            padding: "1rem 2rem",
         }}
       >
         <ModalOverlay />
@@ -30,6 +31,7 @@ export default function LoadingModal({isLoading}) {
           flexDirection="column"
           alignItems="center"
           justifyContent="center"
+          width="50%"
         >
           <ModalHeader>Please wait...</ModalHeader>
           <ModalBody>
