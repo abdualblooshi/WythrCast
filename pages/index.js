@@ -1,20 +1,23 @@
 import Head from "next/head";
 import Weather from "../components/Weather";
-import Drawer from "../components/Drawer";
-import Loading from "../components/Loading";
-import Error from "../components/Error";
-import useSWR, { useSWRConfig } from "swr";
 import { useState } from "react";
 import axios from "axios";
 import rateLimit from "axios-rate-limit";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
+import LoadingModal from "../components/LoadingModal";
+import { Heading } from "@chakra-ui/react";
+import useMediaQuery from "../hooks/useMediaQuery";
 
 /**
  * TODO:
- * Add a search bar to the drawer.
- * Create script to fetch current time in a country/city
- * Create script to fetch weather data of a country/city
- * Change theme based on time of a country
+ * Add a search bar to the drawer. [DONE]
+ * Create script to fetch current time in a country/city [WIP/BUGGY]
+ * Create script to fetch weather data of a country/city [DONE]
+ * Change theme based on time of a country [WIP]
+ * Implement Caching Mechanism for API calls [WIP]
+ * Add a settings button
+ * Finalize Drawer component
+ * Mobile Support
  * */
 
 // Image Imports
@@ -24,197 +27,341 @@ import { useEffect } from "react";
 // Night Images
 import clearNight from "../public/images/clear_night.jpg";
 import cloudyNight from "../public/images/cloudy_night.jpg";
+import drizzleNight from "../public/images/drizzle_night.jpg";
+import dustNight from "../public/images/dust_night.jpg";
+import snowyNight from "../public/images/snow_night.jpg";
 
 // Day Images
 import clearDay from "../public/images/clear_day.jpg";
 import cloudyDay from "../public/images/clouds.jpg";
 import snowyDay from "../public/images/snow_day.jpg";
+import dustDay from "../public/images/dust_day.jpg";
+import drizzleDay from "../public/images/drizzle_day.jpg";
 
 // Weather Condition Images
 import hotWeather from "../public/images/clear_hot.jpg";
 import rainWeather from "../public/images/rain.jpg";
 import stormWeather from "../public/images/thunderstorm.jpg";
 import mistWeather from "../public/images/mist.jpg";
+import tornadoWeather from "../public/images/tornado.jpg";
+import volcanoWeather from "../public/images/volcano.jpg";
+
 import { data } from "autoprefixer";
 import { render } from "react-dom";
 
 const fetcher = (...args) => fetch(...args).then((res) => res.json());
 
-const getBackgroundImage = (sunrise, sunset, data) => {
-  const currentHours = new Date().getHours();
-  const currentMinutes = new Date().getMinutes();
-  const sunriseTime = new Date(sunrise * 1000);
-  const sunriseHours = sunriseTime.getHours();
-  const sunriseMinutes = sunriseTime.getMinutes();
-  const sunsetTime = new Date(sunset * 1000);
-  const sunsetHours = sunsetTime.getHours();
-  const sunsetMinutes = sunsetTime.getMinutes();
-
-  const current_time = {
-    hours: currentHours,
-    minutes: currentMinutes,
-  };
-
-  const sunrise_time = {
-    hours: sunriseHours,
-    minutes: sunsetMinutes,
-  };
-
-  const sunset_time = {
-    hours: sunsetHours,
-    minutes: sunsetMinutes,
-  };
-
-  if (
-    current_time.hours >= sunrise_time.hours &&
-    current_time.minutes >= sunrise_time.minutes &&
-    current_time.hours <= sunset_time.hours &&
-    current_time.minutes <= sunset_time.minutes
-  ) {
-    if (data.weather[0].main === "Clear") {
-      return clearDay.src;
-    } else if (data.weather[0].main === "Clouds") {
-      return cloudyDay.src;
-    } else if (
-      (data.weather[0].main === "Rain" &&
-        data.weather[0].description === "light rain") ||
-      data.weather[0].description === "moderate rain"
-    ) {
-      return rainWeather.src;
-    } else if (
-      data.weather[0].main === "Rain" &&
-      data.weather[0].description === "heavy intensity rain"
-    ) {
-      return stormWeather.src;
-    } else if (data.weather[0].main === "Mist") {
-      return mistWeather.src;
-    } else if (data.main.temp > 30) {
-      return hotWeather.src;
-    } else if (data.main.temp < 0) {
-      return snowyDay.src;
-    }
-  } else {
-    if (data.weather[0].main === "Clear") {
-      return clearNight.src;
-    } else if (data.weather[0].main === "Rain") {
-      return rainWeather.src;
-    } else if (data.weather[0].main === "Mist") {
-      return mistWeather.src;
-    } else if (data.weather[0].main === "Clouds") {
-      return cloudyNight.src;
-    }
-  }
-};
-
-export default function Home() {
-  const [city, setCity] = useState("Texas");
+export default function Home(props) {
+  const [city, setCity] = useState(props.defaultCity);
   const [units, setUnits] = useState("metric");
-  const [theme, setTheme] = useState("light");
-  const [weather, setWeather] = useState({});
-  const [time, setTime] = useState({});
+  const [weather, setWeather] = useState(null);
+  const [time, setTime] = useState("");
+  const [dateYMD, setDateYMD] = useState("");
   const [error, setError] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [sunrise, setSunrise] = useState(0);
-  const [sunset, setSunset] = useState(0);
-  const [latitude, setLatitude] = useState(0);
-  const [longitude, setLongitude] = useState(0);
-  const [backgroundImage, setBackground] = useState();
+  const [isLoading, setLoading] = useState(true);
+  const [backgroundImage, setBackground] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [date, setDate] = useState(new Date().toLocaleDateString());
+  const [amPm, setAmPm] = useState("");
+  const [time12Format, setTime12Format] = useState("");
+  const [titleColor, setTitleColor] = useState("#FFF");
+  const [theme, setTheme] = useState("light");
+  const [isMobile, setIsMobile] = useState(false);
+  const isLargerThan900 = useMediaQuery(800);
 
   useEffect(() => {
     const fetchData = async () => {
-      const weatherRequest = await axios.get(
-        `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=${units}&appid=${process.env.WEATHER_API_KEY}`
-      );
-      const timeRequest = await axios.get(
-        `https://timezone.abstractapi.com/v1/current_time?api_key=${process.env.TIMEZONE_API_KEY}&location=${city}`
-      );
+      const http = rateLimit(axios.create(), {
+        maxRequests: 1,
+        perMilliseconds: 1000,
+        maxRPS: 1,
+      });
 
-      axios
-        .all([weatherRequest, timeRequest])
-        .then(
-          axios.spread((...responses) => {
-            const weatherResponse = responses[0];
+      http.setMaxRPS(1);
+
+      const changeBackground = (sunrise, sunset, data, targetTime) => {
+        const currentDate = new Date(targetTime);
+        const currentHours = currentDate.getUTCHours();
+        const currentMinutes = currentDate.getUTCMinutes();
+        console.log(`${currentHours} : ${currentMinutes}`);
+        const sunriseTime = new Date(sunrise * 1000);
+
+        const sunriseHours = sunriseTime.getUTCHours();
+        const sunriseMinutes = sunriseTime.getUTCMinutes();
+        console.log(
+          `Sunrise Time in ${city}: (${sunriseHours}:${sunriseMinutes})`
+        );
+        const sunsetTime = new Date(sunset * 1000);
+        const sunsetHours = sunsetTime.getUTCHours();
+        const sunsetMinutes = sunsetTime.getUTCMinutes();
+        console.log(
+          `Sunset Time in ${city}: (${sunsetHours}:${sunsetMinutes})`
+        );
+
+        const current_time = {
+          hours: currentHours,
+          minutes: currentMinutes,
+        };
+
+        const sunrise_time = {
+          hours: sunriseHours,
+          minutes: sunriseMinutes,
+        };
+
+        const sunset_time = {
+          hours: sunsetHours,
+          minutes: sunsetMinutes,
+        };
+
+        if (
+          current_time.hours >= sunrise_time.hours &&
+          current_time.minutes >= sunrise_time.minutes &&
+          current_time.hours <= sunset_time.hours &&
+          current_time.minutes <= sunset_time.minutes
+        ) {
+          // Day Pictures
+          if (data.weather[0].main === "Clear") {
+            setTitleColor("#000");
+            if (data.main.temp >= 40) {
+              setBackground(hotWeather.src);
+            } else {
+              setBackground(clearDay.src);
+            }
+          } else if (data.main.temp <= 0) {
+            setBackground(snowyDay.src);
+          } else if (data.weather[0].main === "Clouds" && data.main.temp > 0) {
+            setTitleColor("#FFF");
+            setBackground(cloudyNight.src);
+          } else if (
+            (data.weather[0].main === "Rain" &&
+              data.weather[0].description === "light rain") ||
+            data.weather[0].description === "moderate rain"
+          ) {
+            setTitleColor("#000");
+            setBackground(rainWeather.src);
+          } else if (
+            data.weather[0].main === "Rain" &&
+            data.weather[0].description === "heavy intensity rain"
+          ) {
+            setTitleColor("#FFF");
+            setBackground(stormWeather.src);
+          } else if (data.weather[0].main === "Drizzle") {
+            setTitleColor("#FFF");
+            setBackground(drizzleDay.src);
+          } else if (
+            data.weather[0].main === "Mist" ||
+            data.weather[0].main === "Haze" ||
+            data.weather[0].main === "Fog"
+          ) {
+            setTitleColor("#FFF");
+            setBackground(mistWeather.src);
+          } else if (
+            data.weather[0].main === "Dust" ||
+            data.weather[0].main === "Sand"
+          ) {
+            setTitleColor("#FFF");
+            setBackground(dustDay.src);
+          } else if (
+            data.weather[0].main === "Tornado" ||
+            data.weather[0].main === "Squall"
+          ) {
+            setBackground(tornadoWeather.src);
+          } else if (data.weather[0].main === "Volcano") {
+            setTitleColor("#FFF");
+            setBackground(volcanoWeather.src);
+          }
+        } else {
+          // Night Pictures
+          if (data.weather[0].main === "Clear") {
+            setTitleColor("#FFF");
+            setBackground(clearNight.src);
+          } else if (data.weather[0].main === "Rain") {
+            setTitleColor("#000");
+            setBackground(rainWeather.src);
+          } else if (
+            data.weather[0].main === "Mist" ||
+            data.weather[0].main === "Haze" ||
+            data.weather[0].main === "Fog"
+          ) {
+            setTitleColor("#FFF");
+            setBackground(mistWeather.src);
+          } else if (data.weather[0].main === "Clouds" && data.main.temp > 0) {
+            setTitleColor("#FFF");
+            setBackground(cloudyNight.src);
+          } else if (data.weather[0].main === "Dust") {
+            setTitleColor("#FFF");
+            setBackground(dustNight.src);
+          } else if (data.weather[0].main === "Snow" || data.main.temp <= 0) {
+            setTitleColor("#FFF");
+            setBackground(snowyNight.src);
+          } else if (data.weather[0].main === "Drizzle") {
+            setTitleColor("#FFF");
+            setBackground(drizzleNight.src);
+          } else if (
+            data.weather[0].main === "Tornado" ||
+            data.weather[0].main === "Squall"
+          ) {
+            setTitleColor("#FFF");
+            setBackground(tornadoWeather.src);
+          } else if (data.weather[0].main === "Volcano") {
+            setTitleColor("#FFF");
+            setBackground(volcanoWeather.src);
+          }
+        }
+      };
+
+      setLoading(true);
+      try {
+        const timeRequest = await axios.get(
+          `https://api.ipgeolocation.io/timezone?apiKey=${process.env.TIMEZONE_API_KEY}&location=${city}`,
+          {
+            cache: {
+              maxAge: 15 * 60 * 1000, // 15 minutes cache
+              exclude: { query: false },
+            },
+          }
+        );
+
+        const weatherRequest = await axios.get(
+          `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=${units}&appid=${process.env.WEATHER_API_KEY}`,
+          {
+            cache: {
+              maxAge: 15 * 60 * 1000, // 15 minutes cache
+              exclude: { query: false },
+            },
+          }
+        );
+
+        axios.all([weatherRequest, timeRequest]).then(
+          axios.spread(async (...responses) => {
             const timeResponse = responses[1];
+            const weatherResponse = responses[0];
+            setTime(timeResponse.data.time_24.substring(0, 5));
+            setDate(timeResponse.data.date);
+            setDateYMD(timeResponse.data.date_time_ymd);
+            setTime12Format(timeResponse.data.time_12.substring(0, 5));
+            console.log(time12Format);
+            setAmPm(timeResponse.data.time_12.substring(9));
+            console.log(amPm);
             setWeather(weatherResponse.data);
-            setLoading(false);
-            setSunrise(weatherResponse.data.sys.sunrise);
-            setSunset(weatherResponse.data.sys.sunset);
-            setBackground(
-              getBackgroundImage(
-                weatherResponse.data.sys.sunrise,
-                weatherResponse.data.sys.sunset,
-                weatherResponse.data
-              )
+            changeBackground(
+              weatherResponse.data.sys.sunrise,
+              weatherResponse.data.sys.sunset,
+              weatherResponse.data,
+              dateYMD
             );
-            setLatitude(timeResponse.data.latitude);
-            setLongitude(timeResponse.data.longitude);
-            setTime(timeResponse.data);
+            console.log(city);
+            console.log("-------------");
+            setError(false);
+            setLoading(false);
           })
-        )
-        .catch((errors) => {
+        );
+      } catch (error) {
+        console.log(error);
+        if (error.request.status === 404) {
           setError(true);
-        });
+          setErrorMessage("Wrong city/country!");
+          setLoading(false);
+        } else {
+          setErrorMessage("Error!");
+          setError(true);
+          setLoading(false);
+        }
+      }
     };
     fetchData();
-  }, [city, units]);
-
-  console.log(time, longitude, latitude);
-  console.log(weather);
-
-  if (loading) {
-    return <Loading />;
-  } else {
-    return (
-      <>
-        <Head>
-          <title>WythrCast</title>
-          <meta
-            name="description"
-            content="A weather application created by Abdulrahman Alblooshi"
-          />
-          <link rel="icon" href="/favicon.ico" />
-        </Head>
+  }, [city]);
+  return (
+    <>
+      <Head>
+        <title>
+          WythrCast
+          {weather == null || weather == undefined
+            ? null
+            : ` - ${Math.round(weather.main.temp)}°C`}
+        </title>
+        <meta
+          name="description"
+          content="A weather application created by Abdulrahman Alblooshi"
+        />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <LoadingModal isLoading={isLoading} />
+      <div
+        className="app-container"
+        style={{
+          position: "absolute",
+          display: "flex",
+          backgroundImage: `url(${
+            isLoading && backgroundImage === ""
+              ? hotWeather.src
+              : backgroundImage
+          })`,
+          backgroundPosition: "center",
+          backgroundSize: "cover",
+          backgroundRepeat: "no-repeat",
+          height: "100vh",
+          width: "100vw",
+          fontFamily: "Lato, sans-serif",
+        }}
+      >
+        <Heading
+          className="app-title"
+          color={titleColor}
+          textAlign={isLargerThan900 ? "left" : "center"}
+          padding={!isLargerThan900 ? "1.5rem 0rem" : "1.5rem 2.5rem"}
+          width="100%"
+          position="absolute"
+          fontSize={["1.5rem", "2rem", "2.5rem"]}
+          fontWeight={100}
+        >
+          WythrCast
+        </Heading>
         <div
-          className="app-container"
+          className="weather-app"
           style={{
-            position: "absolute",
-            display: "block",
-            backgroundImage: `url(${backgroundImage})`,
-            backgroundPosition: "center",
-            backgroundSize: "cover",
-            backgroundRepeat: "no-repeat",
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            alignContent: "center",
+            width: "100%",
             height: "100vh",
-            width: "100vw",
           }}
         >
-          <span
-            className="app-title"
-            style={{
-              position: "absolute",
-              fontSize: "3rem",
-              marginLeft: "3rem",
-              marginTop: "5vh",
-              color: "#FFF",
-              fontWeight: 100,
-            }}
-          >
-            WythrCast
-          </span>
-          <div
-            className="weather-app"
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              width: "100%",
-              height: "100vh",
-            }}
-          >
-            <Weather weather={weather} time={time} />
-            <Drawer city={city} error={error} />
-          </div>
+          <Weather
+            weather={weather}
+            time={time}
+            isLoading={isLoading}
+            date={date}
+            error={error}
+            setError={setError}
+            setCity={setCity}
+            errorMessage={errorMessage}
+            theme={theme}
+            isLargerThan900={isLargerThan900}
+          />
         </div>
-      </>
-    );
-  }
+      </div>
+    </>
+  );
+}
+
+export async function getServerSideProps(context) {
+  const ipRequest = await axios.get(`https://api.ipify.org?format=json`);
+  const ip = ipRequest.data.ip;
+
+  const cityRequest = await axios.get(
+    `http://ip-api.com/json/${ip}?fields=status,message,country,city,lat,lon,query,timezone`
+  );
+  const defaultCity = cityRequest.data.city;
+  const timeZone = cityRequest.data.timezone;
+
+  return {
+    props: {
+      ip,
+      defaultCity,
+      timeZone,
+    },
+  };
 }
