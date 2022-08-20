@@ -1,10 +1,7 @@
 import Head from "next/head";
 import Weather from "../components/Weather";
-import Drawer from "../components/Drawer";
-import useSWR, { useSWRConfig } from "swr";
 import { useState } from "react";
 import axios from "axios";
-import { setupCache } from "axios-cache-adapter";
 import rateLimit from "axios-rate-limit";
 import { useEffect, useCallback } from "react";
 import LoadingModal from "../components/LoadingModal";
@@ -56,6 +53,7 @@ export default function Home(props) {
   const [units, setUnits] = useState("metric");
   const [weather, setWeather] = useState(null);
   const [time, setTime] = useState("");
+  const [dateYMD, setDateYMD] = useState("");
   const [error, setError] = useState(false);
   const [isLoading, setLoading] = useState(true);
   const [backgroundImage, setBackground] = useState("");
@@ -64,6 +62,7 @@ export default function Home(props) {
   const [amPm, setAmPm] = useState("");
   const [time12Format, setTime12Format] = useState("");
   const [titleColor, setTitleColor] = useState("#FFF");
+  const [theme, setTheme] = useState("light");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -76,17 +75,23 @@ export default function Home(props) {
       http.setMaxRPS(1);
 
       const changeBackground = (sunrise, sunset, data, targetTime) => {
-        const currentHours = targetTime.substring(0, 2);
-        const currentMinutes = targetTime.substring(3, 5);
+        const currentDate = new Date(targetTime);
+        const currentHours = currentDate.getUTCHours();
+        const currentMinutes = currentDate.getUTCMinutes();
         console.log(`${currentHours} : ${currentMinutes}`);
         const sunriseTime = new Date(sunrise * 1000);
-        console.log("Sunrise Time in City: ", sunriseTime);
-        const sunriseHours = sunriseTime.getHours();
-        const sunriseMinutes = sunriseTime.getMinutes();
+
+        const sunriseHours = sunriseTime.getUTCHours();
+        const sunriseMinutes = sunriseTime.getUTCMinutes();
+        console.log(
+          `Sunrise Time in ${city}: (${sunriseHours}:${sunriseMinutes})`
+        );
         const sunsetTime = new Date(sunset * 1000);
-        console.log("Sunset Time in City: ", sunsetTime);
-        const sunsetHours = sunsetTime.getHours();
-        const sunsetMinutes = sunsetTime.getMinutes();
+        const sunsetHours = sunsetTime.getUTCHours();
+        const sunsetMinutes = sunsetTime.getUTCMinutes();
+        console.log(
+          `Sunset Time in ${city}: (${sunsetHours}:${sunsetMinutes})`
+        );
 
         const current_time = {
           hours: currentHours,
@@ -204,7 +209,7 @@ export default function Home(props) {
           `https://api.ipgeolocation.io/timezone?apiKey=${process.env.TIMEZONE_API_KEY}&location=${city}`,
           {
             cache: {
-              maxAge: 15 * 60 * 1000, // 2 min instead of 15 min
+              maxAge: 15 * 60 * 1000, // 15 minutes cache
               exclude: { query: false },
             },
           }
@@ -214,7 +219,7 @@ export default function Home(props) {
           `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=${units}&appid=${process.env.WEATHER_API_KEY}`,
           {
             cache: {
-              maxAge: 15 * 60 * 1000, // 2 min instead of 15 min
+              maxAge: 15 * 60 * 1000, // 15 minutes cache
               exclude: { query: false },
             },
           }
@@ -226,6 +231,7 @@ export default function Home(props) {
             const weatherResponse = responses[0];
             setTime(timeResponse.data.time_24.substring(0, 5));
             setDate(timeResponse.data.date);
+            setDateYMD(timeResponse.data.date_time_ymd);
             setTime12Format(timeResponse.data.time_12.substring(0, 5));
             console.log(time12Format);
             setAmPm(timeResponse.data.time_12.substring(9));
@@ -235,13 +241,7 @@ export default function Home(props) {
               weatherResponse.data.sys.sunrise,
               weatherResponse.data.sys.sunset,
               weatherResponse.data,
-              time // <--- to be fixed
-              /*
-               * TODO:
-               * new Date() won't work because it keeps referencing back to the same time value,
-               * it has to be changed to a string that contains time in 24-hour format
-               * not a YMD format datetime string
-               */
+              dateYMD
             );
             console.log(city);
             console.log("-------------");
@@ -328,16 +328,11 @@ export default function Home(props) {
             time={time}
             isLoading={isLoading}
             date={date}
-          />
-          <Drawer
-            city={city}
-            weather={weather}
             error={error}
+            setError={setError}
             setCity={setCity}
             errorMessage={errorMessage}
-            isLoading={isLoading}
-            amPm={amPm}
-            time12Format={time12Format}
+            theme={theme}
           />
         </div>
       </div>
