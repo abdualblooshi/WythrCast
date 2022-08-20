@@ -8,7 +8,6 @@ import { setupCache } from "axios-cache-adapter";
 import rateLimit from "axios-rate-limit";
 import { useEffect, useCallback } from "react";
 import LoadingModal from "../components/LoadingModal";
-import { NextSeo } from "next-seo";
 
 /**
  * TODO:
@@ -19,6 +18,7 @@ import { NextSeo } from "next-seo";
  * Implement Caching Mechanism for API calls [WIP]
  * Add a settings button
  * Finalize Drawer component
+ * Mobile Support
  * */
 
 // Image Imports
@@ -63,6 +63,7 @@ export default function Home(props) {
   const [date, setDate] = useState(new Date().toLocaleDateString());
   const [amPm, setAmPm] = useState("");
   const [time12Format, setTime12Format] = useState("");
+  const [titleColor, setTitleColor] = useState("#FFF");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -108,71 +109,90 @@ export default function Home(props) {
         ) {
           // Day Pictures
           if (data.weather[0].main === "Clear") {
-            setBackground(clearDay.src);
+            setTitleColor("#000");
+            if (data.main.temp >= 40) {
+              setBackground(hotWeather.src);
+            } else if (data.main.temp <= 0) {
+              setBackground(snowyDay.src);
+            } else {
+              setBackground(clearDay.src);
+            }
           } else if (data.weather[0].main === "Clouds") {
+            setTitleColor("#FFF");
             setBackground(cloudyNight.src);
           } else if (
             (data.weather[0].main === "Rain" &&
               data.weather[0].description === "light rain") ||
             data.weather[0].description === "moderate rain"
           ) {
+            setTitleColor("#000");
             setBackground(rainWeather.src);
           } else if (
             data.weather[0].main === "Rain" &&
             data.weather[0].description === "heavy intensity rain"
           ) {
+            setTitleColor("#FFF");
             setBackground(stormWeather.src);
           } else if (data.weather[0].main === "Drizzle") {
+            setTitleColor("#FFF");
             setBackground(drizzleDay.src);
           } else if (
             data.weather[0].main === "Mist" ||
             data.weather[0].main === "Haze" ||
             data.weather[0].main === "Fog"
           ) {
+            setTitleColor("#FFF");
             setBackground(mistWeather.src);
           } else if (
             data.weather[0].main === "Dust" ||
             data.weather[0].main === "Sand"
           ) {
+            setTitleColor("#FFF");
             setBackground(dustDay.src);
-          } else if (data.main.temp > 30) {
-            setBackground(hotWeather.src);
-          } else if (data.main.temp < 0) {
-            setBackground(snowyDay.src);
           } else if (
             data.weather[0].main === "Tornado" ||
             data.weather[0].main === "Squall"
           ) {
             setBackground(tornadoWeather.src);
           } else if (data.weather[0].main === "Volcano") {
+            setTitleColor("#FFF");
             setBackground(volcanoWeather.src);
           }
         } else {
           // Night Pictures
           if (data.weather[0].main === "Clear") {
+            setTitleColor("#FFF");
             setBackground(clearNight.src);
           } else if (data.weather[0].main === "Rain") {
+            setTitleColor("#000");
             setBackground(rainWeather.src);
           } else if (
             data.weather[0].main === "Mist" ||
             data.weather[0].main === "Haze" ||
             data.weather[0].main === "Fog"
           ) {
+            setTitleColor("#FFF");
             setBackground(mistWeather.src);
           } else if (data.weather[0].main === "Clouds") {
+            setTitleColor("#FFF");
             setBackground(cloudyNight.src);
           } else if (data.weather[0].main === "Dust") {
+            setTitleColor("#FFF");
             setBackground(dustNight.src);
           } else if (data.weather[0].main === "Snow") {
+            setTitleColor("#000");
             setBackground(snowyDay.src);
           } else if (data.weather[0].main === "Drizzle") {
+            setTitleColor("#FFF");
             setBackground(drizzleNight.src);
           } else if (
             data.weather[0].main === "Tornado" ||
             data.weather[0].main === "Squall"
           ) {
+            setTitleColor("#FFF");
             setBackground(tornadoWeather.src);
           } else if (data.weather[0].main === "Volcano") {
+            setTitleColor("#FFF");
             setBackground(volcanoWeather.src);
           }
         }
@@ -266,7 +286,9 @@ export default function Home(props) {
           position: "absolute",
           display: "block",
           backgroundImage: `url(${
-            isLoading && backgroundImage === "" ? clearDay.src : backgroundImage
+            isLoading && backgroundImage === ""
+              ? hotWeather.src
+              : backgroundImage
           })`,
           backgroundPosition: "center",
           backgroundSize: "cover",
@@ -283,7 +305,7 @@ export default function Home(props) {
             fontSize: "3rem",
             marginLeft: "3rem",
             marginTop: "5vh",
-            color: "#FFF",
+            color: titleColor,
             fontWeight: 100,
           }}
         >
