@@ -57,12 +57,12 @@ export default function Home(props) {
   const [units, setUnits] = useState("metric");
   const [weather, setWeather] = useState(null);
   const [time, setTime] = useState("");
-  const [dateYMD, setDateYMD] = useState("");
   const [error, setError] = useState(false);
   const [isLoading, setLoading] = useState(true);
   const [backgroundImage, setBackground] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [date, setDate] = useState(new Date().toLocaleDateString());
+  const [dateYMD, setDateYMD] = useState(props.date_ymd);
   const [amPm, setAmPm] = useState("");
   const [time12Format, setTime12Format] = useState("");
   const [titleColor, setTitleColor] = useState("#FFF");
@@ -73,57 +73,39 @@ export default function Home(props) {
   useEffect(() => {
     const fetchData = async () => {
       const http = rateLimit(axios.create(), {
-        maxRequests: 1,
-        perMilliseconds: 1000,
-        maxRPS: 1,
+        maxRequests: 2,
+        perMilliseconds: 1250,
+        maxRPS: 2,
       });
 
       http.setMaxRPS(1);
 
       const changeBackground = (sunrise, sunset, data, targetTime) => {
         const currentDate = new Date(targetTime);
-        const currentHours = currentDate.getUTCHours();
-        const currentMinutes = currentDate.getUTCMinutes();
+        const utcCurrentDate = new Date(currentDate.toUTCString().slice(0, -4));
+        console.log("--------------------------");
+        console.log(utcCurrentDate);
         //console.log(`${currentHours} : ${currentMinutes}`);
         const sunriseTime = new Date(sunrise * 1000);
-
         const sunriseHours = sunriseTime.getUTCHours();
         const sunriseMinutes = sunriseTime.getUTCMinutes();
+        const utcSunrise = new Date(sunriseTime.toUTCString().slice(0, -4));
+        console.log(utcSunrise);
         /*console.log(
           `Sunrise Time in ${city}: (${sunriseHours}:${sunriseMinutes})`
         );*/
         const sunsetTime = new Date(sunset * 1000);
+        const utcSunset = new Date(sunsetTime.toUTCString().slice(0, -4));
+        console.log(utcSunset);
         const sunsetHours = sunsetTime.getUTCHours();
         const sunsetMinutes = sunsetTime.getUTCMinutes();
-        /*         console.log(
-          `Sunset Time in ${city}: (${sunsetHours}:${sunsetMinutes})`
-        ); */
+        console.log(utcCurrentDate < utcSunset);
 
-        const current_time = {
-          hours: currentHours,
-          minutes: currentMinutes,
-        };
-
-        const sunrise_time = {
-          hours: sunriseHours,
-          minutes: sunriseMinutes,
-        };
-
-        const sunset_time = {
-          hours: sunsetHours,
-          minutes: sunsetMinutes,
-        };
-
-        if (
-          current_time.hours >= sunrise_time.hours &&
-          current_time.minutes >= sunrise_time.minutes &&
-          current_time.hours <= sunset_time.hours &&
-          current_time.minutes <= sunset_time.minutes
-        ) {
+        if (utcCurrentDate >= utcSunrise && utcCurrentDate <= utcSunset) {
           // Day Pictures
           if (data.weather[0].main === "Clear") {
             setTitleColor("#000");
-            if (data.main.temp >= 40) {
+            if (data.main.temp >= 38) {
               setBackground(hotWeather.src);
             } else {
               setBackground(clearDay.src);
@@ -217,7 +199,7 @@ export default function Home(props) {
 
       setLoading(true);
       try {
-        const timeRequest = await axios.get(
+        const timeRequest = await http.get(
           `https://api.ipgeolocation.io/timezone?apiKey=${process.env.TIMEZONE_API_KEY}&location=${city}`,
           {
             cache: {
@@ -227,7 +209,7 @@ export default function Home(props) {
           }
         );
 
-        const weatherRequest = await axios.get(
+        const weatherRequest = await http.get(
           `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=${units}&appid=${process.env.WEATHER_API_KEY}`,
           {
             cache: {
@@ -372,13 +354,24 @@ export async function getServerSideProps(context) {
     `http://ip-api.com/json/${ip}?fields=status,message,country,city,lat,lon,query,timezone`
   );
   const defaultCity = cityRequest.data.city;
-  const timeZone = cityRequest.data.timezone;
+
+  const timeRequest = await axios.get(
+    `https://api.ipgeolocation.io/timezone?apiKey=${process.env.TIMEZONE_API_KEY}&location=${defaultCity}`,
+    {
+      cache: {
+        maxAge: 15 * 60 * 1000, // 15 minutes cache
+        exclude: { query: false },
+      },
+    }
+  );
+
+  const date_ymd = timeRequest.data.date_time_ymd;
 
   return {
     props: {
       ip,
       defaultCity,
-      timeZone,
+      date_ymd,
     },
   };
 }
