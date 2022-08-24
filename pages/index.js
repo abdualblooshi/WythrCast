@@ -303,7 +303,7 @@ export default function Home(props) {
           width="100%"
           position="absolute"
           fontSize={["1.5rem", "2rem", "2.5rem"]}
-          fontWeight={100}
+          fontWeight={300}
         >
           WythrCast
         </Heading>
